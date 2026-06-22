@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Predict - DeepFake Detector</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+  <div class="bg-animated">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <nav class="navbar glass">
+    <div class="brand">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+        style="color:var(--accent-cyan);">
+        <path d="M2 12h4l2-9 5 18 3-10h6" />
+      </svg>
+      DeepImage Classifier
+    </div>
+    <div class="nav-links glass">
+      <a href="/">Home</a>
+      <a href="/predict" class="active">Predict</a>
+      <a href="/train">Retrain</a>
+    </div>
+  </nav>
+
+  <main class="hero">
+    <div class="card glass">
+      <h2>Upload & Predict</h2>
+      <p class="muted">Choose an image file to analyze with our CNN model. Get instant predictions on whether the image
+        is real or deepfake.</p>
+
+      <div class="uploader">
+        <div class="preview" id="previewBox">
+          <div class="preview-placeholder">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+              stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+            </svg>
+            <p>Drag & drop or click to upload</p>
+          </div>
+        </div>
+
+        <div class="form-panel">
+          <div class="form-section">
+            <label style="display:block; margin-bottom:12px; font-weight:600; color:var(--text-primary);">Select
+              Image</label>
+            <div class="input-file-wrapper">
+              <input type="file" id="imageInput" accept="image/*" class="input-file">
+              <div class="input-file-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                Browse Files
+              </div>
+            </div>
+            <p style="color:var(--text-muted); font-size:13px; margin-top:12px;">Supported formats: PNG, JPG or GIF (Max
+              10MB)</p>
+          </div>
+
+          <div class="btn-group">
+            <button id="predictBtn" class="btn btn-primary">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+              Predict
+            </button>
+            <button id="clearBtn" class="btn btn-ghost">Clear</button>
+          </div>
+
+          <div class="result-box" id="resultBox">
+            <div class="result-row">
+              <span class="result-label">Prediction</span>
+              <div id="predictionResult">
+                <span class="badge badge-real">Real</span>
+              </div>
+            </div>
+            <div class="result-row">
+              <span class="result-label">Confidence</span>
+              <span class="result-value" id="confidenceResult">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">&copy; 2026 DeepFake Detector • AI-Powered Image Authentication</footer>
+
+  <script>
+    const imageInput = document.getElementById('imageInput');
+    const previewBox = document.getElementById('previewBox');
+    const predictBtn = document.getElementById('predictBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const resultBox = document.getElementById('resultBox');
+    const predictionResult = document.getElementById('predictionResult');
+    const confidenceResult = document.getElementById('confidenceResult');
+
+    let selectedFile = null;
+
+    // Drag and drop support
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      previewBox.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      previewBox.addEventListener(eventName, () => {
+        previewBox.classList.add('dragover');
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      previewBox.addEventListener(eventName, () => {
+        previewBox.classList.remove('dragover');
+      }, false);
+    });
+
+    previewBox.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      handleFiles(files);
+    });
+
+    // Click to upload support via clicking the preview box
+    previewBox.addEventListener('click', () => {
+      imageInput.click();
+    });
+
+    imageInput.addEventListener('change', (e) => {
+      handleFiles(e.target.files);
+    });
+
+    function handleFiles(files) {
+      const file = files[0];
+      if (!file || !file.type.startsWith('image/')) return;
+      selectedFile = file;
+
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(file);
+      img.onload = () => { URL.revokeObjectURL(img.src); }
+
+      previewBox.innerHTML = '';
+      previewBox.appendChild(img);
+
+      // reset results
+      resultBox.classList.remove('show');
+    }
+
+    clearBtn.addEventListener('click', () => {
+      imageInput.value = '';
+      selectedFile = null;
+      previewBox.innerHTML = `
+    <div class="preview-placeholder">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+      </svg>
+      <p>Drag & drop or click to upload</p>
+    </div>
+  `;
+      resultBox.classList.remove('show');
+    });
+
+    predictBtn.addEventListener('click', async () => {
+      if (!selectedFile) {
+        alert('Please select an image first');
+        return;
+      }
+
+      predictBtn.disabled = true;
+      predictBtn.innerHTML = '<div class="spinner"></div> Analyzing...';
+
+      resultBox.classList.add('show');
+      predictionResult.innerHTML = '<div class="spinner" style="border-top-color:var(--accent-purple);"></div>';
+      confidenceResult.textContent = 'Calculating...';
+
+      const fd = new FormData();
+      fd.append('file', selectedFile);
+
+      try {
+        const res = await fetch('/predict', { method: 'POST', body: fd });
+        const json = await res.json();
+
+        const prediction = json.prediction ? json.prediction.toLowerCase().trim() : 'unknown';
+        const confidence = json.confidence || 0;
+
+        if (prediction.includes('real')) {
+          predictionResult.innerHTML = '<span class="badge badge-real"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Real</span>';
+        } else if (prediction.includes('fake') || prediction.includes('deepfake')) {
+          predictionResult.innerHTML = '<span class="badge badge-deepfake"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> DeepFake</span>';
+        } else {
+          predictionResult.innerHTML = `<span class="badge badge-real">${prediction}</span>`;
+        }
+
+        confidenceResult.textContent = confidence + '%';
+      } catch (err) {
+        predictionResult.innerHTML = '<span class="badge badge-deepfake">Error</span>';
+        confidenceResult.textContent = '—';
+      }
+
+      predictBtn.disabled = false;
+      predictBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg> Predict';
+    });
+  </script>
+
+  <script>
+    document.querySelectorAll('.nav-links a').forEach(link => {
+      if (link.href === window.location.href) {
+        document.querySelectorAll('.nav-links a').forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+      }
+    });
+  </script>
+</body>
+
+</html>

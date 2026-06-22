@@ -1,0 +1,7 @@
+.git
+.github
+.dvc
+.venv
+__pycache__
+.ipynb_checkpoints
+research

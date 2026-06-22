@@ -1,8 +1,8 @@
-from cnnClassifer import logger
-from cnnClassifer.pipeline.step_01_data_ingestion import DataIngestionPipeline
-from cnnClassifer.pipeline.step_02_base_model_prepare import BaseModelPipeline
-from cnnClassifer.pipeline.step_03_training import ModelTrainingPipeline
-from cnnClassifer.pipeline.step_04_evaluation import EvaluationPipeline
+from src.cnnClassifer import logger
+from src.cnnClassifer.pipeline.step_01_data_ingestion import DataIngestionPipeline
+from src.cnnClassifer.pipeline.step_02_base_model_prepare import BaseModelPipeline
+from src.cnnClassifer.pipeline.step_03_training import ModelTrainingPipeline
+from src.cnnClassifer.pipeline.step_04_evaluation import EvaluationPipeline
 
 
 

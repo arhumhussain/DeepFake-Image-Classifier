@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Train Model - DeepFake Detector</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+  <div class="bg-animated">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <nav class="navbar glass">
+    <div class="brand">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+        style="color:var(--accent-cyan);">
+        <path d="M2 12h4l2-9 5 18 3-10h6" />
+      </svg>
+      DeepImage Classifier
+    </div>
+    <div class="nav-links glass">
+      <a href="/">Home</a>
+      <a href="/predict">Predict</a>
+      <a href="/train" class="active">Retrain</a>
+    </div>
+  </nav>
+
+  <main class="hero">
+    <div class="card glass" style="max-width:800px;">
+      <h2>Train Your Model on New Dataset</h2>
+      <p class="muted">Initiate a full training cycle on your dataset. The model will be trained using the CNN
+        architecture and saved automatically.</p>
+
+      <div class="train-container">
+        <div class="train-info">
+          <div class="info-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 16v-4" />
+              <path d="M12 8h.01" />
+            </svg>
+          </div>
+          <div>
+            <h3>Training Information</h3>
+            <p>This will process your dataset and train the model. Depending on your hardware and dataset size, this may
+              take several minutes to complete.</p>
+          </div>
+        </div>
+
+        <div class="train-controls">
+          <button id="trainBtn" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3" />
+            </svg>
+            Start Training
+          </button>
+          <div class="train-status">
+            <div class="status-indicator idle" id="statusIndicator"></div>
+            <span id="trainStatus" style="font-weight:500;">Ready</span>
+          </div>
+        </div>
+
+        <div class="log-box" id="logBox">
+          <div class="log-content" id="logContent">Logs will appear here...</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">&copy; 2026 DeepFake Detector • AI-Powered Image Authentication</footer>
+
+  <script>
+    const trainBtn = document.getElementById('trainBtn');
+    const trainStatus = document.getElementById('trainStatus');
+    const statusIndicator = document.getElementById('statusIndicator');
+    const logBox = document.getElementById('logBox');
+    const logContent = document.getElementById('logContent');
+
+    function addLog(message, type = '') {
+      const span = document.createElement('span');
+      if (type) span.className = type;
+      span.textContent = message + '\n';
+      logContent.appendChild(span);
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    const predictLink = document.querySelector('a[href="/predict"]');
+
+    trainBtn.addEventListener('click', async () => {
+      trainBtn.disabled = true;
+      trainBtn.style.cursor = 'not-allowed';
+      if (predictLink) {
+        predictLink.style.pointerEvents = 'none';
+        predictLink.style.opacity = '0.5';
+      }
+
+      statusIndicator.className = 'status-indicator running';
+      trainStatus.textContent = 'Training in progress...';
+
+      logBox.classList.add('show');
+      logContent.innerHTML = '';
+      addLog('> Training pipeline...', '');
+      addLog('> Training Model.....', 'info');
+
+      try {
+        const res = await fetch('/train', { method: 'POST' });
+        const json = await res.json();
+
+        if (json.status === 'completed') {
+          statusIndicator.className = 'status-indicator completed';
+          trainStatus.textContent = 'Training completed ✓';
+          addLog('> Training Completed.', 'success');
+        } else {
+          trainStatus.textContent = 'Training started';
+          addLog('> Response received:\n' + JSON.stringify(json, null, 2), '');
+        }
+      } catch (err) {
+        statusIndicator.className = 'status-indicator idle';
+        trainStatus.textContent = 'Error occurred';
+        addLog('> Failed to start training: ' + err.message, 'error');
+      }
+
+      trainBtn.disabled = false;
+      trainBtn.style.cursor = 'pointer';
+      if (predictLink) {
+        predictLink.style.pointerEvents = 'auto';
+        predictLink.style.opacity = '1';
+      }
+    });
+  </script>
+
+  <script>
+    document.querySelectorAll('.nav-links a').forEach(link => {
+      if (link.href === window.location.href) {
+        document.querySelectorAll('.nav-links a').forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+      }
+    });
+  </script>
+</body>
+
+</html>

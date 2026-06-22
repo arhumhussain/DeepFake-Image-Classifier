@@ -1,7 +1,7 @@
 import os
 from box.exceptions import BoxValueError
 import yaml
-from cnnClassifer import logger
+from .. import logger
 import joblib
 from box import ConfigBox
 from pathlib import Path
