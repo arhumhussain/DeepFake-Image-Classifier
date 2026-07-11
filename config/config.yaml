@@ -25,3 +25,4 @@ training:
 evaluation:
    root_dir: artifacts/evaluation
    evaluation_filepath: artifacts/evaluation/evaluation.txt
+   mlflow_uri: https://dagshub.com/arhumhussain/DeepFake-Image-Classifier.mlflow

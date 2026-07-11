@@ -95,15 +95,14 @@ class ConfiguartionManager:
     
     
     def get_evaluation_config(self) -> EvaluationConfig:
-        
-
         evaluation_config = EvaluationConfig(
-        root_dir= self.config.evaluation.root_dir,
-        model_path = "artifacts/training/model.h5",
-        training_data= "artifacts/data_ingestion/Human-Face",
-        all_params=self.params,
-        params_batch_size=self.params.BATCH_SIZE,
-        params_image_size=self.params.IMAGE_SIZE
+            root_dir=Path(self.config.evaluation.root_dir),
+            model_path=Path("artifacts/training/model.h5"),
+            training_data=Path("artifacts/data_ingestion/Human-Face"),
+            all_params=self.params,
+            mlflow_uri=self.config.evaluation.mlflow_uri,
+            params_batch_size=self.params.BATCH_SIZE,
+            params_image_size=self.params.IMAGE_SIZE
         )
 
         return evaluation_config

@@ -3,6 +3,10 @@ import tensorflow as tf
 from cnnClassifer.constants.paths import *
 from cnnClassifer.utils.common import read_yaml,create_directories,save_json
 from cnnClassifer.entity.config_entity import EvaluationConfig
+from cnnClassifer import logger
+import mlflow
+import mlflow.keras
+from urllib.parse import urlparse
 
 
 
@@ -58,3 +62,31 @@ class Evaluation:
 
         save_json(
             path=Path("artifacts/evaluation/score.json"), data=scores)
+
+    def log_into_mlflow(self):
+        try:
+            mlflow.set_registry_uri(self.config.mlflow_uri)
+            tracking_url_type_store = urlparse(mlflow.get_tracking_uri()).scheme
+
+            with mlflow.start_run():
+                mlflow.log_params(self.config.all_params)
+                mlflow.log_metrics({
+                    "loss": self.score[0],
+                    "accuracy": self.score[1]
+                })
+
+                # Model Registry works with a database-backed store (e.g. dagshub, postgres, mysql, sqlite)
+                if tracking_url_type_store != "file":
+                    mlflow.keras.log_model(self.model, "model", registered_model_name="DeepFakeVGG16Model")
+                else:
+                    mlflow.keras.log_model(self.model, "model")
+        except Exception as e:
+            logger.warning(f"Failed to log to remote MLflow: {e}. Falling back to local MLflow log.")
+            mlflow.set_tracking_uri("file:./mlruns")
+            with mlflow.start_run():
+                mlflow.log_params(self.config.all_params)
+                mlflow.log_metrics({
+                    "loss": self.score[0],
+                    "accuracy": self.score[1]
+                })
+                mlflow.keras.log_model(self.model, "model")

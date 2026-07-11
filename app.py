@@ -3,6 +3,7 @@ import os
 from flask_cors import CORS, cross_origin
 from src.cnnClassifer.components.prediction import PredictionPipeline
 from src.cnnClassifer.utils.common import decodeImage
+import uuid
 
 os.putenv('LANG', 'en_US.UTF-8')
 os.putenv('LC_ALL','en_US.UTF-8')
@@ -57,9 +58,7 @@ def predictRoute():
     if is_training:
         return jsonify({"prediction": "Training in progress. Please try again later.", "confidence": 0})
 
-    import uuid
     os.makedirs("images", exist_ok=True)
-    
     unique_filename = f"images/{uuid.uuid4().hex}.jpg"
 
     # Accept multipart file upload (from the HTML form) or a base64 JSON payload
